@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Свод договорённостей</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
@@ -48,8 +48,10 @@
         <ul class="region-list" id="region-list"></ul>
       </aside>
       <div>
-        <select class="control region-select-mobile" id="region-select" aria-label="Регион"></select>
-        <div class="toolbar" id="regions-toolbar"></div>
+        <div class="region-picker">
+          <label for="region-select">🗺️ Выберите регион</label>
+          <select class="control" id="region-select"></select>
+        </div>
         <p class="result-info" id="regions-info"></p>
         <div id="regions-content"></div>
       </div>
@@ -88,6 +90,6 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="vendor/xlsx.mini.min.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>

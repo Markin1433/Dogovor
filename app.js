@@ -45,7 +45,6 @@ const state = {
   tab: 'fields',
   q: '',
   region: '',         // '' — все записи
-  sort: 'new',
   target: '',         // id записи, к которой надо прокрутить
   expanded: new Set(),
 };
@@ -290,7 +289,6 @@ function readHash() {
   state.tab = p.get('tab') === 'regions' ? 'regions' : 'fields';
   state.q = p.get('q') || '';
   state.region = p.get('region') || '';
-  state.sort = p.get('sort') === 'old' ? 'old' : 'new';
   state.target = p.get('id') || '';
   if (state.target) state.tab = state.target.startsWith('f') ? 'fields' : 'regions';
 }
@@ -300,7 +298,6 @@ function writeHash() {
   if (state.tab !== 'fields') p.set('tab', state.tab);
   if (state.q) p.set('q', state.q);
   if (state.region) p.set('region', state.region);
-  if (state.sort !== 'new') p.set('sort', state.sort);
   const h = p.toString();
   history.replaceState(null, '', h ? '#' + h : location.pathname + location.search);
 }
@@ -367,14 +364,14 @@ function regionsHitHint(ts) {
   return n ? `<br><br><button class="link-btn" data-goto="regions">В разделе «Регионы» ${plural(n, 'найдена', 'найдено', 'найдено')} ${fmtCount(n, 'запись', 'записи', 'записей')} →</button>` : '';
 }
 
+// Сначала новые; записи без даты — в конце, в порядке файла
 function sortEntries(list) {
-  const dir = state.sort === 'old' ? 1 : -1;
   return [...list].sort((a, b) => {
     const ad = a.date && a.date.iso, bd = b.date && b.date.iso;
-    if (ad && bd && ad !== bd) return ad < bd ? -dir : dir;
-    if (ad && !bd) return dir < 0 ? -1 : 1;  // записи без даты — в конце (или в начале при «сначала старые»)
-    if (!ad && bd) return dir < 0 ? 1 : -1;
-    return (a.order - b.order) * (dir < 0 ? -1 : 1);
+    if (ad && bd && ad !== bd) return ad < bd ? 1 : -1;
+    if (ad && !bd) return -1;
+    if (!ad && bd) return 1;
+    return b.order - a.order;
   });
 }
 
@@ -427,13 +424,6 @@ function renderRegions(ts, re) {
     `<option value="${GLOBAL}">🌍 Для всех регионов (${counts.get(GLOBAL) || 0})</option>` +
     d.regions.map((r) => `<option value="${esc(r)}">${esc(r)} (${counts.get(r) || 0})</option>`).join('');
   sel.value = state.region;
-
-  // ----- сортировка -----
-  $('regions-toolbar').innerHTML =
-    `<select class="control" id="sort" aria-label="Сортировка">
-       <option value="new" ${state.sort === 'new' ? 'selected' : ''}>Сначала новые</option>
-       <option value="old" ${state.sort === 'old' ? 'selected' : ''}>Сначала старые</option>
-     </select>`;
 
   // ----- записи -----
   const filtersOn = ts.length > 0;
@@ -585,10 +575,6 @@ function bind() {
 
   window.addEventListener('resize', setHeaderHeight);
   window.addEventListener('hashchange', () => { readHash(); render(); });
-
-  document.addEventListener('change', (e) => {
-    if (e.target.id === 'sort') { state.sort = e.target.value; render(); }
-  });
 
   document.addEventListener('click', (e) => {
     const b = e.target.closest('button, .inc');

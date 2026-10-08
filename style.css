@@ -154,10 +154,6 @@ main { padding-top: 16px; padding-bottom: 40px; }
 .view { display: none; }
 .view.active { display: block; }
 
-.toolbar {
-  display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px;
-}
-
 
 select.control {
   border: 1px solid var(--border); background: var(--surface);
@@ -251,7 +247,15 @@ select.control {
 .region-list .sep { height: 1px; background: var(--border); margin: 6px 4px; }
 .region-list .global-item:not(.active) { color: var(--global); font-weight: 600; }
 
-.region-select-mobile { display: none; width: 100%; margin-bottom: 12px; }
+.region-picker { display: none; margin: 8px 0 16px; }
+.region-picker label {
+  display: block; margin-bottom: 6px;
+  font-size: 13px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--muted);
+}
+.region-picker select {
+  width: 100%; padding: 12px 14px; border-radius: 10px;
+  border: 2px solid var(--accent); font-weight: 600;
+}
 
 .section-title {
   font-size: 13px; text-transform: uppercase; letter-spacing: .6px;
@@ -360,14 +364,12 @@ dialog .dlg-foot { padding: 12px 24px 20px; text-align: right; }
 @media (max-width: 900px) {
   .regions-layout { grid-template-columns: 1fr; }
   .region-side { display: none; }
-  .region-select-mobile { display: block; }
+  .region-picker { display: block; }
   .header { position: static; }
   .fields-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {
-  .toolbar { flex-wrap: nowrap; overflow-x: auto; margin-left: -16px; margin-right: -16px; padding: 0 16px 4px; scrollbar-width: none; }
-  .toolbar::-webkit-scrollbar { display: none; }
   .brand h1 { font-size: 18px; }
   .help-btn { display: none; }
   .tab { padding: 10px 10px; }
@@ -378,7 +380,7 @@ dialog .dlg-foot { padding: 12px 24px 20px; text-align: right; }
 
 @media print {
   .header { position: static; box-shadow: none; }
-  .search, .help-btn, .toolbar, .region-side, .region-select-mobile, footer, .card-actions, .more-btn { display: none !important; }
+  .search, .help-btn, .region-side, .region-picker, footer, .card-actions, .more-btn { display: none !important; }
   .card-text.clamped { display: block; -webkit-line-clamp: unset; }
   .regions-layout { grid-template-columns: 1fr; }
   .card, .field-card { box-shadow: none; break-inside: avoid; }
