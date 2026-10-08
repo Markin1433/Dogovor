@@ -157,22 +157,7 @@ main { padding-top: 16px; padding-bottom: 40px; }
 .toolbar {
   display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px;
 }
-.toolbar .spacer { flex: 1; }
-.toolbar-label { color: var(--muted); font-size: 13px; margin-right: 2px; }
 
-.chip {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: 999px;
-  padding: 5px 12px;
-  cursor: pointer;
-  font-size: 13.5px;
-  white-space: nowrap;
-}
-.chip:hover { border-color: var(--accent); }
-.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-.chip .n { opacity: .7; margin-left: 4px; font-size: 12px; }
-.chip.new-chip:not(.active) { color: var(--new); border-color: var(--new); }
 
 select.control {
   border: 1px solid var(--border); background: var(--surface);
@@ -383,7 +368,6 @@ dialog .dlg-foot { padding: 12px 24px 20px; text-align: right; }
 @media (max-width: 560px) {
   .toolbar { flex-wrap: nowrap; overflow-x: auto; margin-left: -16px; margin-right: -16px; padding: 0 16px 4px; scrollbar-width: none; }
   .toolbar::-webkit-scrollbar { display: none; }
-  .toolbar .spacer { display: none; }
   .brand h1 { font-size: 18px; }
   .help-btn { display: none; }
   .tab { padding: 10px 10px; }

@@ -35,19 +35,6 @@ const CONFIG = {
 
 const GLOBAL = 'Все регионы';
 
-// Быстрые фильтры раздела «Регионы» (поиск по ключевым словам в тексте)
-const TOPICS = [
-  { id: 'fake', label: 'Фейк', re: /фейк|фэйк/ },
-  { id: 'sc', label: 'Закрытие по СЦ', re: /(^|[^а-яё])сц([^а-яё]|$)/ },
-  { id: 'common', label: 'Общий ответ', re: /общ(ий|им|ие|ими|его|ему)\s+ответ|един(ым|ый)\s+ответ|одним\s+ответом|перекличк/ },
-  { id: 'screen', label: 'Скрин / ручная публикация', re: /скрин|ручн/ },
-  { id: 'addr', label: 'Адрес / объект', re: /адрес|объект/ },
-  { id: 'theme', label: 'Тема', re: /(^|[^а-яё])(тем[аеуыо]|тематик)/ },
-  { id: 'result', label: 'Итог / тип', re: /итог|(^|[^а-яё])тип/ },
-  { id: 'max', label: 'MAX', re: /(^|[^а-яёa-z])(макс[ае]?|max|мах)([^а-яёa-z]|$)/ },
-  { id: 'vdl', label: 'ВДЛ / эфир', re: /вдл|эфир/ },
-];
-
 // ===================== СОСТОЯНИЕ =====================
 
 const state = {
@@ -58,10 +45,7 @@ const state = {
   tab: 'fields',
   q: '',
   region: '',         // '' — все записи
-  topic: '',
-  onlyNew: false,
   sort: 'new',
-  col: '',            // '' — все разделы «Поля»
   target: '',         // id записи, к которой надо прокрутить
   expanded: new Set(),
 };
@@ -201,7 +185,6 @@ function parseWorkbook(wb) {
     e.isGlobal = e.region === GLOBAL;
     e.isNew = !!(e.date && e.date.iso && e.date.iso >= newLimit);
     e.search = norm(e.region + ' ' + e.text + ' ' + (e.date ? e.date.text : ''));
-    e.topics = TOPICS.filter((t) => t.re.test(norm(e.text))).map((t) => t.id);
     if (e.date && e.date.iso && (!lastDate || e.date.iso > lastDate.iso)) lastDate = e.date;
   });
 
@@ -307,10 +290,7 @@ function readHash() {
   state.tab = p.get('tab') === 'regions' ? 'regions' : 'fields';
   state.q = p.get('q') || '';
   state.region = p.get('region') || '';
-  state.topic = p.get('topic') || '';
-  state.onlyNew = p.get('new') === '1';
   state.sort = p.get('sort') === 'old' ? 'old' : 'new';
-  state.col = p.get('col') || '';
   state.target = p.get('id') || '';
   if (state.target) state.tab = state.target.startsWith('f') ? 'fields' : 'regions';
 }
@@ -320,10 +300,7 @@ function writeHash() {
   if (state.tab !== 'fields') p.set('tab', state.tab);
   if (state.q) p.set('q', state.q);
   if (state.region) p.set('region', state.region);
-  if (state.topic) p.set('topic', state.topic);
-  if (state.onlyNew) p.set('new', '1');
   if (state.sort !== 'new') p.set('sort', state.sort);
-  if (state.col) p.set('col', state.col);
   const h = p.toString();
   history.replaceState(null, '', h ? '#' + h : location.pathname + location.search);
 }
@@ -370,17 +347,7 @@ function render() {
 
 function renderFields(ts, re) {
   const d = state.data;
-  const colIdx = state.col === '' ? -1 : +state.col;
-
-  $('fields-toolbar').innerHTML =
-    `<button class="chip ${colIdx < 0 ? 'active' : ''}" data-col="">Все разделы</button>` +
-    d.fields.map((c, i) => {
-      const n = c.items.filter((it) => matches(it.search, ts)).length;
-      return `<button class="chip ${colIdx === i ? 'active' : ''}" data-col="${i}">${c.icon} ${esc(c.title)}<span class="n">${n}</span></button>`;
-    }).join('');
-
-  const cards = d.fields.map((c, i) => {
-    if (colIdx >= 0 && colIdx !== i) return '';
+  const cards = d.fields.map((c) => {
     const items = c.items.filter((it) => matches(it.search, ts));
     if (!items.length && ts.length) return '';
     return `<article class="field-card">
@@ -430,10 +397,7 @@ function entryCard(e, re) {
 
 function renderRegions(ts, re) {
   const d = state.data;
-  const base = d.entries.filter((e) =>
-    matches(e.search, ts) &&
-    (!state.topic || e.topics.includes(state.topic)) &&
-    (!state.onlyNew || e.isNew));
+  const base = d.entries.filter((e) => matches(e.search, ts));
 
   // ----- список регионов -----
   const counts = new Map();
@@ -464,20 +428,15 @@ function renderRegions(ts, re) {
     d.regions.map((r) => `<option value="${esc(r)}">${esc(r)} (${counts.get(r) || 0})</option>`).join('');
   sel.value = state.region;
 
-  // ----- панель фильтров -----
-  const newCount = d.entries.filter((e) => e.isNew && matches(e.search, ts) && (!state.topic || e.topics.includes(state.topic))).length;
-  const topicCount = (id) => d.entries.filter((e) => e.topics.includes(id) && matches(e.search, ts) && (!state.onlyNew || e.isNew)).length;
+  // ----- сортировка -----
   $('regions-toolbar').innerHTML =
-    `<button class="chip new-chip ${state.onlyNew ? 'active' : ''}" data-new="1" title="Записи за последние ${CONFIG.newDays} дней">🆕 Новые<span class="n">${newCount}</span></button>` +
-    TOPICS.map((t) => `<button class="chip ${state.topic === t.id ? 'active' : ''}" data-topic="${t.id}" title="Записи, где встречается: ${esc(t.label.toLowerCase())}">${esc(t.label)}<span class="n">${topicCount(t.id)}</span></button>`).join('') +
-    `<span class="spacer"></span>
-     <select class="control" id="sort" aria-label="Сортировка">
+    `<select class="control" id="sort" aria-label="Сортировка">
        <option value="new" ${state.sort === 'new' ? 'selected' : ''}>Сначала новые</option>
        <option value="old" ${state.sort === 'old' ? 'selected' : ''}>Сначала старые</option>
      </select>`;
 
   // ----- записи -----
-  const filtersOn = ts.length || state.topic || state.onlyNew;
+  const filtersOn = ts.length > 0;
   let html = '';
   let info = '';
 
@@ -637,15 +596,12 @@ function bind() {
     const ds = b.dataset;
     if (b.classList.contains('tab')) { state.tab = ds.tab; render(); return; }
     if ('goto' in ds) { state.tab = ds.goto; render(); return; }
-    if ('col' in ds) { state.col = ds.col; render(); return; }
     if ('region' in ds) {
       state.region = ds.region; state.tab = 'regions';
       $('region-search').value = '';
       render(); window.scrollTo({ top: 0 }); return;
     }
-    if ('topic' in ds) { state.topic = state.topic === ds.topic ? '' : ds.topic; render(); return; }
-    if ('new' in ds) { state.onlyNew = !state.onlyNew; render(); return; }
-    if ('reset' in ds) { state.q = ''; state.topic = ''; state.onlyNew = false; render(); return; }
+    if ('reset' in ds) { state.q = ''; render(); return; }
     if ('expand' in ds) { state.expanded.add(ds.expand); render(); return; }
     if ('copy' in ds) { copy(ds.copy, `Номер ${ds.copy} скопирован`); return; }
     if ('copyText' in ds) {
